@@ -1102,7 +1102,7 @@ function fuTypeChip(t){
   return`<span style="font-size:10.5px;padding:2px 8px;border-radius:12px;background:${m[1]};color:${m[2]};font-weight:600">${m[0]} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>`;
 }
 function cm(id){document.getElementById(id).classList.remove('open');}
-function openSetup(){cm('setupModal');}
+function openSetup(){document.getElementById('setupModal').classList.add('open');}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtD(iso){try{return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch{return iso;}}
 function formatDate(str){if(!str)return'';try{const d=new Date(str);return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}catch{return str;}}
