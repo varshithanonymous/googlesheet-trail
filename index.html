@@ -243,6 +243,7 @@ label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5p
 </head>
 <body>
 
+
 <!-- TOPBAR -->
 <div class="topbar">
   <div style="display:flex;align-items:center">
@@ -623,7 +624,7 @@ function getUrl(){return localStorage.getItem(URLK)||'';}
 // We proxy through the local server (sheet_proxy.py) at /proxy.
 async function fetchWithFallback(sheetUrl){
   const u=normalizeSheetUrl(sheetUrl);
-  const r=await fetch('/api/proxy?url=' + encodeURIComponent(u),,{signal:AbortSignal.timeout(20000)});
+  const r=await fetch('/api/proxy?url=' + encodeURIComponent(u), {signal:AbortSignal.timeout(20000)});
   if(!r.ok) throw new Error('proxy '+r.status);
   const txt=await r.text();
   if(!txt || txt.trim().length<10) throw new Error('Empty response from proxy');
@@ -1007,13 +1008,10 @@ async function saveContact(){
   save();cm('formModal');renderAll();checkFollowUps();
 }
 
-// â”€â”€ QUICK STATUS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── QUICK STATUS ──────────────────────────────────────────────────────────
 function quickStatus(id, val){
   const c=contacts.find(x=>x.id===id); if(!c) return;
   c.status=val; save(); renderAll();
-  toast(`âœ“ ${c.name} â†’ ${ST[val]?.label}`);
-}
-
 // â”€â”€ NOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openNotes(id){
   noteId=id;const c=contacts.find(x=>x.id===id);
@@ -1037,7 +1035,7 @@ function saveNote(){
   rnl(c);renderAll();
 }
 
-// â”€â”€ DELETE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE ────────────────────────────────────────────────────────────────────────
 function openDel(id){delId=id;document.getElementById('dname').textContent=contacts.find(x=>x.id===id)?.name||'';document.getElementById('delModal').classList.add('open');}
 function confirmDel(){contacts=contacts.filter(x=>x.id!==delId);save();cm('delModal');renderAll();toast('Deleted');}
 
@@ -1104,6 +1102,7 @@ function fuTypeChip(t){
   return`<span style="font-size:10.5px;padding:2px 8px;border-radius:12px;background:${m[1]};color:${m[2]};font-weight:600">${m[0]} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>`;
 }
 function cm(id){document.getElementById(id).classList.remove('open');}
+function openSetup(){cm('setupModal');}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtD(iso){try{return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch{return iso;}}
 function formatDate(str){if(!str)return'';try{const d=new Date(str);return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}catch{return str;}}
@@ -1111,11 +1110,18 @@ let tt;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),2800);}
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',ev=>{if(ev.target===el)el.classList.remove('open');}));
 
-// â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── INIT ──────────────────────────────────────────────────────────────────
 load();refreshSyncUI();
-const sheetUrl=getUrl();
-if(sheetUrl){ss('syncing','Auto-syncingâ€¦');syncNow();}
-else ss('idle','No sheet connected');
+fetch('/config')
+  .then(r=>r.json())
+  .then(cfg=>{
+    if(cfg.sheet_url) localStorage.setItem(URLK,cfg.sheet_url);
+    if(cfg.openai_api_key) localStorage.setItem(AKK,cfg.openai_api_key);
+    const sheetUrl = cfg.sheet_url || getUrl();
+    if(sheetUrl){ss('syncing','Auto-syncing…');syncNow();}
+    else ss('idle','No sheet connected');
+  })
+  .catch(()=>{const sheetUrl=getUrl();if(sheetUrl){ss('syncing','Auto-syncing…');syncNow();}else ss('idle','No sheet connected');});
 renderAll();
 checkFollowUps();
 </script>

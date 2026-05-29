@@ -110,9 +110,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         # Some environments may append trailing slashes or otherwise vary the path.
-        if parsed.path.startswith("/proxy"):
-            dbg = parsed.path.rstrip("/").endswith("debug")
-            self._handle_proxy(parsed, debug=dbg)
+        if parsed.path.rstrip('/') == "/config":
+            self._handle_config()
             return
         if parsed.path.rstrip("/") == "/ai_contacts":
             self._handle_ai_contacts(parsed)
@@ -220,6 +219,20 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def _handle_config(self) -> None:
+        """Return JSON with credentials from environment variables."""
+        # Define the env variable names expected for configuration
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        sheet_url = os.getenv("GOOGLE_SHEET_URL", "").strip()
+        config = {"openai_api_key": api_key, "sheet_url": sheet_url}
+        out = json.dumps(config).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(out)
+        return
 
     def _handle_ai_contacts(self, parsed: urllib.parse.ParseResult) -> None:
         qs = urllib.parse.parse_qs(parsed.query)
